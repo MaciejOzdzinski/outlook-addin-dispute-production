@@ -1,0 +1,7 @@
+{
+  "devServer": {
+    "command": "npm run dev-server",
+    "url": "https://localhost:3000/index.html"
+  },
+  "type": "desktop"
+}
