@@ -1,14 +1,68 @@
-export interface Customer {
-  id: number;
-  name: string;
-  email: string;
+import type { MimeAttachment } from "@/dto/mimeobjects";
+
+// src/models/api.ts
+export interface ICASOCNT {
+  NAACOM: string;
+  NANUM: string;
+  NANAME: string;
 }
 
-//CustomerCreate = Omit<Customer, "id">    - do dodawania nowego klienta nie potrzebujemy id
-//Omit oznacza „weź typ Customer i usuń z niego wskazane pole”.
-export type CustomerCreate = Omit<Customer, "id">;
+export interface ICASODPH {
+  DHECOD: string;
+  DHEDES: string;
+  DHHSQL: string;
+  DHEMAI: string;
+  DHEPHO: string;
+}
 
-//CustomerUpdate = Partial<Omit<Customer, "id">>;  - do aktualizacji klienta nie potrzebujemy id i wszystkie pola są opcjonalne
-//Omit<Customer, "id"> — znowu usuwamy id
-//Partial<...> — zamienia wszystkie pola na opcjonalne
-export type CustomerUpdate = Partial<Omit<Customer, "id">>;
+export interface ICASODPT {
+  DTHCOD: string;
+  DTHDES: string;
+}
+
+// Typ zwracany przez API
+export interface ICommonDataResponse {
+  CASOCNT: ICASOCNT[];
+  CASODPH: ICASODPH[];
+  CASODPT: ICASODPT[];
+}
+
+export interface ICASODPD {
+  DPPID: number;
+  DPHCOD: string;
+  DPSCOD: string;
+  DPDHND: string;
+  DPPRIO: number;
+  DPCRDT: number;
+  DPMSGD?: string; // jeśli w bazie może być null
+  DPMSGA?: string; // jeśli w bazie może być null
+  DPADAT: number;
+  DTHDES?: string;
+  DHEDES?: string;
+}
+
+export interface ICASOINV {
+  DTACOM: string;
+  DTREFX: number;
+  DTDOTY: string;
+  DTIDNO: number;
+  DTTTXT: string;
+  DLPIDS: ICASODPD[];
+}
+
+export interface DisputeFormData {
+  customerNumber?: ICASOCNT;
+  disputeType?: ICASODPT;
+  disputeHandler?: ICASODPH;
+  invoiceNumber?: ICASOINV;
+  actionDate?: Date;
+  priority: number;
+  description?: string;
+  from?: string;
+  to?: string;
+  subject?: string;
+  body?: string;
+  disputeToUpdate?: ICASODPD;
+  graphMessageId?: string;
+  attachments?: MimeAttachment[];
+}

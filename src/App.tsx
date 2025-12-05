@@ -3,208 +3,431 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Button,
   Text,
-  Input,
   makeStyles,
-  useId,
+  Card,
+  Popover,
+  PopoverSurface,
+  Skeleton,
+  SkeletonItem,
+  CompoundButton,
+  Persona,
+  Avatar,
+  Field,
+  Spinner,
+  tokens,
+  MessageBar,
 } from "@fluentui/react-components";
 
-import { List } from "react-window";
-import { EXAMPLE_CUSTOMERS } from "./data";
-import { CustomersApi } from "./api/disputesApi";
-import type { Customer } from "./dto/dto";
-import { LocationAddFilled } from "@fluentui/react-icons";
-import { excustomers } from "./api/data";
-import { CustomerCombobox } from "./CustomersComboBox";
+import type {
+  DisputeFormData,
+  ICASOCNT,
+  ICASODPH,
+  ICASODPT,
+  ICASOINV,
+} from "./dto/dto";
+import { CustomerSearchList } from "./CustomerSearchList";
+import { InvoicesComboBox } from "./InvoicesComboBox";
+import Separator from "./Separator";
+import { useCommonData } from "@/hooks/useCommonData";
+import { useCreateDispute } from "@/hooks/useCreateDispute";
+import { useInvoicesByCustomer } from "@/hooks/useInvoicesByCustomer";
+import { DisputeTypesCombobox } from "./DisputeTypesComboBox";
+import { DisputeHandlersCombobox } from "./DisputeHandlersComboBox";
 
 const useStyles = makeStyles({
   root: {
-    // Stack the label above the field with a gap
     display: "grid",
     gridTemplateRows: "repeat(1fr)",
     justifyItems: "start",
     gap: "2px",
     maxWidth: "400px",
   },
+
+  instructions: {
+    fontWeight: tokens.fontWeightSemibold,
+    marginTop: "20px",
+    marginBottom: "10px",
+  },
+  textPromptAndInsertion: {
+    display: "flex",
+    flexDirection: "column",
+    width: "100%",
+  },
+  textAreaField: {
+    marginTop: "30px",
+    marginBottom: "20px",
+    marginRight: "20px",
+    maxWidth: "100%",
+  },
+  buttonc1: {
+    width: "300px",
+  },
+  buttonContainer: {
+    position: "fixed",
+    right: "15px",
+    bottom: "15px",
+  },
+
+  card: {
+    margin: "auto",
+    width: "100%",
+    maxWidth: "100%",
+    marginBottom: "15px",
+  },
+
+  listbox: {
+    maxHeight: "250px",
+  },
+  option: {
+    height: "12px",
+  },
 });
 
-// Główny komponent aplikacji
-// Odczytuje nadawcę z kontekstu Office i pobiera klientów z API
-// Wyświetla combobox do wyboru klienta, który jest filtrowany po id/name/email
-// Obsługuje błędy i ładowanie danych
-// Wyświetla wybranego klienta i jego dane
-// Używa Fluent UI Components i react-window do wydajnego renderowania listy klientów
-// Używa useCallback i useMemo do optymalizacji wydajności
-// Używa useDeferredValue do opóźnionego filtrowania listy klientów
-// Używa useId do generowania unikalnych identyfikatorów dla elementów UI
-// Używa makeStyles do stylizacji komponentów
+// initial form data
+const initialFormData: DisputeFormData = {
+  customerNumber: undefined,
+  disputeType: undefined,
+  disputeHandler: undefined,
+  actionDate: new Date(),
+  priority: 0,
+  description: "",
+  invoiceNumber: undefined,
+
+  from: "",
+  to: "",
+  subject: "",
+  body: "",
+
+  disputeToUpdate: undefined,
+
+  graphMessageId: "",
+
+  attachments: undefined,
+};
 
 export const App = () => {
   const [senderEmail, setSenderEmail] = useState<string | null>(null);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(false);
+
+  // błąd związany z Outlook / odczytem nadawcy
   const [error, setError] = useState<string | null>(null);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
+
+  const [openDisputesDialog, setOpenDisputesDialog] = useState<boolean>(false);
+  const [openCustomersDialog, setOpenCustomersDialog] =
+    useState<boolean>(false);
+
+  const [selectedCustomer, setSelectedCustomer] = useState<ICASOCNT | null>(
     null
   );
 
-  // tekst z pola Search – filtruje listę po id/name/email
-  const [searchCustomerText, setSearchCustomerText] = useState<string>("");
+  const [formData, setFormData] = useState<DisputeFormData>(initialFormData);
 
-  const comboId = useId("combo-default");
+  const styles = useStyles();
 
-  // Funkcja do obsługi zmiany wybranego klienta - stabilna referencja
-  const handleCustomerChange = useCallback(
-    (id: number | null) => setSelectedCustomerId(id),
-    []
-  );
+  // ---- HOOK: wspólne dane z API na podstawie e-maila nadawcy ----
+  const {
+    data: commonData,
+    loading: commonLoading,
+    error: commonError,
+    reload: reloadCommon,
+  } = useCommonData(senderEmail);
 
-  // ===== 1. Odczyt nadawcy i pobranie klientów z API =====
-  // Funkcja ładująca klientów z API i ma sabilna referencję dzięki useCallback
-  const loadAll = useCallback(
-    async (email: Customer["email"]): Promise<void> => {
-      setLoading(true);
-      setError(null);
-      console.log("Loading customers for email:", email);
+  const {
+    data: invoices,
+    loading: invoicesLoading,
+    error: invoicesError,
+    reload: reloadInvoices,
+  } = useInvoicesByCustomer(selectedCustomer?.NANUM);
 
-      try {
-        const data = await CustomersApi.getAll();
-        //const data = excustomers;
-        setCustomers(data as Customer[]);
-      } catch (e: any) {
-        console.error(e);
-        setError(e?.message ?? "Error while loading customers.");
-      } finally {
-        setLoading(false);
-      }
+  // ---- HOOK: tworzenie dispute ----
+  const {
+    createDispute,
+    loading: isSaving,
+    error: saveError,
+  } = useCreateDispute();
+
+  //Stabilizacja referencji tablic [] ze wzgledu na zapis: ?? []
+  const customers = React.useMemo(() => {
+    return commonData?.CASOCNT ?? [];
+  }, [commonData]);
+
+  const disputeTypes = React.useMemo(() => {
+    return commonData?.CASODPT ?? [];
+  }, [commonData]);
+
+  const disputeHandlers = React.useMemo(() => {
+    return commonData?.CASODPH ?? [];
+  }, [commonData]);
+
+  const invoicesA = React.useMemo(() => {
+    return invoices ?? [];
+  }, [invoices]);
+
+  //Handlery
+
+  const handlePopoverOpenChange = React.useCallback(
+    (_: unknown, data: { open: boolean }) => {
+      setOpenCustomersDialog(data.open);
     },
-    []
+    [setOpenCustomersDialog]
   );
 
-  useEffect(() => {
-    try {
-      // Read sender from Office context and load example customers
-      const item = Office.context?.mailbox?.item;
-
-      if (!item || !item.from) {
-        setError("Cannot access current message or sender.");
-        return;
-      }
-
-      const email = item.from.emailAddress as string | undefined;
-
-      if (!email) {
-        setError("Sender email address not found.");
-        return;
-      }
-
-      setSenderEmail(email);
-      loadAll(email);
-    } catch (e) {
-      console.error(e);
-      setError("Unexpected error while reading email.");
-    }
+  // zmiana klienta
+  const handleCustomerChange = useCallback((casocnt: ICASOCNT | null) => {
+    setSelectedCustomer(casocnt);
+    setFormData((prev) => ({
+      ...prev,
+      customerNumber: casocnt ?? undefined,
+      invoiceNumber: undefined, // bo invoice już nie pasuje
+      disputeType: undefined,
+    }));
+    setOpenCustomersDialog(false);
   }, []);
 
-  const handleReload = () => {
-    if (senderEmail) {
-      loadAll(senderEmail);
+  // zmiana faktury
+  const handleInvoiceChange = useCallback((casoinv: ICASOINV | null) => {
+    setFormData((prev) => ({ ...prev, invoiceNumber: casoinv ?? undefined }));
+  }, []);
+
+  // zmiana dispute type
+  const handleDisputeTypeChange = useCallback((casodpt: ICASODPT | null) => {
+    setFormData((prev) => ({ ...prev, disputeType: casodpt ?? undefined }));
+  }, []);
+
+  // zmiana dispute handler
+  const handleDisputeHandlerChange = useCallback((casodph: ICASODPH | null) => {
+    setFormData((prev) => ({ ...prev, disputeHandler: casodph ?? undefined }));
+  }, []);
+
+  // handler Save – używa hooka useCreateDispute
+  const handleSave = React.useCallback(async () => {
+    const ok = await createDispute(formData);
+    if (ok) {
+      // TODO: toast / komunikat sukcesu
+      console.log("Dispute utworzony.");
+    } else {
+      // błąd domenowy lub HTTP – szczegóły są w saveError
+      console.warn("Dispute not created.");
     }
-  };
+  }, [createDispute, formData]);
+
+  // walidacja formularza
+  const isFormValid = useMemo(() => {
+    return Boolean(
+      formData.customerNumber?.NANUM &&
+        formData.disputeType?.DTHCOD &&
+        formData.disputeHandler?.DHECOD &&
+        formData.actionDate instanceof Date &&
+        !isNaN(formData.actionDate.getTime()) &&
+        formData.priority > 0 &&
+        formData.invoiceNumber?.DTIDNO
+    );
+  }, [formData]);
+
+  // ---- Odczyt nadawcy z Outlooka – tylko raz przy montowaniu ----
+  useEffect(() => {
+    let cancelled = false;
+
+    const init = async () => {
+      try {
+        await Office.onReady();
+
+        const item = Office.context.mailbox?.item as
+          | Office.MessageRead
+          | undefined;
+
+        if (!item || !item.from) {
+          if (!cancelled) {
+            setError("Cannot access current message or sender.");
+          }
+          return;
+        }
+
+        const email = item.from.emailAddress;
+        if (!email) {
+          if (!cancelled) {
+            setError("Sender email address not found.");
+          }
+          return;
+        }
+
+        if (cancelled) return;
+
+        setSenderEmail(email);
+      } catch (error) {
+        console.error("Error while reading email:", error);
+        if (!cancelled) {
+          setError("Unexpected error while reading email.");
+        }
+      }
+    };
+
+    void init();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-        height: "100%",
-      }}
-    >
-      {/* Nagłówek + reload */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <Text weight="semibold" size={400}>
-          Customers for sender
-        </Text>
-
-        <Button
-          appearance="primary"
-          size="small"
-          onClick={handleReload}
-          disabled={!senderEmail || loading}
-        >
-          Reload
-        </Button>
-      </div>
-
-      {/* Info o nadawcy */}
-      <div>
-        <Text weight="semibold">Sender email: </Text>
-        <Text>{senderEmail ?? "(not available)"}</Text>
-      </div>
-
-      {loading && <Text size={200}>Loading customers...</Text>}
-
+    <>
+      {/* Błąd Outlooka (brak wiadomości / nadawcy) */}
       {error && (
-        <Text size={200} style={{ color: "#c50f1f", whiteSpace: "pre-wrap" }}>
-          Error: {error}
-        </Text>
+        <MessageBar intent="error" style={{ marginBottom: 8 }}>
+          {error}
+        </MessageBar>
       )}
 
-      {/* Search + Combobox tylko gdy mamy dane */}
-      {!loading && !error && customers.length > 0 && (
-        <>
-          {/* Search */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <Text size={200}>Search (id / name / country):</Text>
-            <Input
-              value={searchCustomerText}
-              onChange={(_, data) => setSearchCustomerText(data.value)}
-              appearance="outline"
-              size="small"
-              placeholder="Type to filter customers..."
-            />
+      {/* Błąd wspólnych danych z API */}
+      {commonError && (
+        <MessageBar intent="error" style={{ marginBottom: 8 }}>
+          {commonError}
+          <Button
+            size="small"
+            appearance="subtle"
+            onClick={reloadCommon}
+            style={{ marginLeft: 8 }}
+          >
+            Retry
+          </Button>
+        </MessageBar>
+      )}
+
+      {/* Błąd zapisu dispute */}
+      {saveError && (
+        <MessageBar intent="error" style={{ marginBottom: 8 }}>
+          {saveError}
+        </MessageBar>
+      )}
+
+      <Card>
+        <div>
+          <div>
+            {commonLoading ? (
+              <Skeleton aria-label="Loading Content">
+                <SkeletonItem shape="rectangle" size={56} />
+              </Skeleton>
+            ) : (
+              <>
+                <CompoundButton
+                  size="medium"
+                  style={{ width: "100%", justifyContent: "flex-start" }}
+                  onClick={() => setOpenCustomersDialog(true)}
+                >
+                  <Persona
+                    name={formData?.customerNumber?.NANAME}
+                    size="medium"
+                    secondaryText={formData?.customerNumber?.NANUM}
+                    avatar={
+                      selectedCustomer
+                        ? { color: "colorful", "aria-hidden": true }
+                        : { "aria-label": "Guest" }
+                    }
+                  />
+                </CompoundButton>
+              </>
+            )}
+
+            <div></div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <label id={comboId}>Select customer:</label>
-
-            <CustomerCombobox
-              customers={customers}
-              selectedCustomerId={selectedCustomerId}
-              onSelectedChange={handleCustomerChange}
-            />
+          <div
+            style={{
+              display: "flex",
+              marginTop: "15px",
+              marginBottom: "15px",
+              gap: "10px",
+              alignItems: "center",
+            }}
+          >
+            <Avatar aria-label="Guest" size={24} />
+            <Text size={300} className="text-muted-foreground">
+              {senderEmail}
+            </Text>
           </div>
-        </>
-      )}
-
-      {/* Brak klientów */}
-      {!loading && !error && senderEmail && customers.length === 0 && (
-        <Text size={200}>No customers found for this email.</Text>
-      )}
-
-      {/* Podgląd wybranego klienta */}
-      {selectedCustomerId != null && (
-        <div style={{ marginTop: "auto" }}>
-          <Text weight="semibold" size={200}>
-            Selected customer:
-          </Text>
-          <br />
-          <Text size={200}>
-            {(() => {
-              const c = customers.find((x) => x.id === selectedCustomerId);
-              if (!c) return `ID: ${selectedCustomerId}`;
-              return `${c.name} (${c.email}), ID: ${c.id}`;
-            })()}
-          </Text>
         </div>
-      )}
-    </div>
+
+        <Popover
+          open={openCustomersDialog}
+          onOpenChange={handlePopoverOpenChange}
+        >
+          <PopoverSurface tabIndex={-1}>
+            <Field label="Search customer">
+              <CustomerSearchList
+                customers={customers}
+                selectedCustomer={selectedCustomer}
+                onSelectedChange={handleCustomerChange}
+              />
+            </Field>
+
+            <div style={{ height: "25px" }} />
+
+            <div
+              style={{
+                display: "flex",
+                gap: "5px",
+                justifyContent: "flex-end",
+              }}
+            >
+              <Button
+                size="small"
+                onClick={handlePopoverOpenChange.bind(
+                  undefined,
+                  {},
+                  { open: false }
+                )}
+              >
+                Close
+              </Button>
+            </div>
+          </PopoverSurface>
+        </Popover>
+      </Card>
+
+      <Separator height={10} />
+
+      <Card>
+        <InvoicesComboBox
+          key={`inv-${selectedCustomer?.NANUM ?? "none"}`}
+          error={commonError ?? ""}
+          isLoading={commonLoading}
+          invoices={invoicesA}
+          selectedInvoice={formData.invoiceNumber ?? null}
+          onSelectedChange={handleInvoiceChange}
+        />
+
+        <DisputeTypesCombobox
+          key={`dtype-${selectedCustomer?.NANUM ?? "none"}`}
+          error={commonError ?? ""}
+          isLoading={commonLoading}
+          disputeTypes={disputeTypes}
+          selectedDisputeType={formData.disputeType ?? null}
+          onSelectedChange={handleDisputeTypeChange}
+        />
+
+        <DisputeHandlersCombobox
+          key={`dhandler-${selectedCustomer?.NANUM ?? "none"}`}
+          error={commonError ?? ""}
+          isLoading={commonLoading}
+          disputeHandlers={disputeHandlers}
+          selectedDisputeHandler={formData.disputeHandler ?? null}
+          onSelectedChange={handleDisputeHandlerChange}
+        />
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+          <div className={styles.buttonContainer}>
+            <Button
+              appearance="primary"
+              disabled={isSaving || !isFormValid}
+              size="small"
+              icon={isSaving ? <Spinner size="extra-tiny" /> : null}
+              onClick={handleSave}
+            >
+              {isSaving ? "Saving..." : "Save"}
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </>
   );
 };
 

@@ -7,20 +7,15 @@ import {
   type ComboboxProps,
 } from "@fluentui/react-components";
 import { List, type RowComponentProps } from "react-window";
-
-type Customer = {
-  id: number;
-  name: string;
-  email: string;
-};
+import type { ICASOCNT } from "./dto/dto";
 
 const ITEM_HEIGHT = 50; // wysokość jednego wiersza listy (dopasuj do swojego UI)
 const LIST_HEIGHT = 500; // maksymalna wysokość dropdowna
 
 export type CustomerComboboxProps = {
-  customers: Customer[];
-  selectedCustomerId: number | null;
-  onSelectedChange: (id: number | null) => void;
+  customers: ICASOCNT[];
+  selectedCustomer: ICASOCNT | null;
+  onSelectedChange: (casocnt: ICASOCNT | null) => void;
 };
 
 // Komponent CustomerCombobox z Fluent UI Combobox i react-window i memoizacją
@@ -41,28 +36,31 @@ export const CustomerCombobox = React.memo(
       if (!q) return customers;
 
       return customers.filter((c) => {
-        const haystack = `${c.id} ${c.name} ${c.email}`.toLowerCase();
+        const haystack = `${c.NANUM} ${c.NANAME}`.toLowerCase();
         return haystack.includes(q);
       });
     }, [customers, deferredQuery]);
 
     const onOptionSelect: ComboboxProps["onOptionSelect"] = (_, data) => {
-      const id = data.optionValue ? Number(data.optionValue) : null;
-      onSelectedChange(id);
+      const id = data.optionValue ? data.optionValue : null;
+
+      const findCustomer = customers.find((c) => c.NANUM === id) || null;
+
+      onSelectedChange(findCustomer);
 
       if (id == null) {
         setQuery("");
         return;
       }
 
-      const customer = customers.find((c) => c.id === id);
+      const customer = customers.find((c) => c.NANUM === id);
       // 👇 to jest dokładnie to, co chcesz widzieć w polu:
-      setQuery(customer ? `${customer.id} - ${customer.name}` : "");
+      setQuery(customer ? `${customer.NANUM} - ${customer.NANAME}` : "");
     };
 
     // 🔍 pojedynczy wiersz do react-window
     // ---- ROW DLA react-window v2 ----
-    type RowData = { customers: Customer[] };
+    type RowData = { customers: ICASOCNT[] };
 
     const Row = ({ index, style, customers }: RowComponentProps<RowData>) => {
       const customer = customers[index];
@@ -70,14 +68,14 @@ export const CustomerCombobox = React.memo(
       return (
         <div style={style}>
           <Option
-            key={customer.id}
-            value={customer.id.toString()}
-            text={`${customer.id} - ${customer.name}`}
+            key={customer.NANUM}
+            value={customer.NANUM}
+            text={`${customer.NANUM} - ${customer.NANAME}`}
           >
             <Persona
               avatar={{ color: "colorful", "aria-hidden": true }}
-              name={`${customer.id} - ${customer.name}`}
-              secondaryText={customer.email}
+              name={`${customer.NANUM} - ${customer.NANAME}`}
+              secondaryText="Customer"
               presence={{ status: "available" }}
             />
           </Option>
