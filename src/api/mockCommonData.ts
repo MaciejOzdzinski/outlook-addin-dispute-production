@@ -61,7 +61,7 @@ export function generateMockCommonData(): ICommonDataResponse {
     createDisputeType(i + 1)
   );
 
-  const disputeHandlers: ICASODPH[] = Array.from({ length: 5 }).map((_, i) =>
+  const disputeHandlers: ICASODPH[] = Array.from({ length: 25 }).map((_, i) =>
     createDisputeHandler(i + 1)
   );
 

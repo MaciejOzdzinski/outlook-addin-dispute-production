@@ -16,14 +16,18 @@ import {
   Spinner,
   tokens,
   MessageBar,
+  InfoLabel,
+  Textarea,
+  Switch,
 } from "@fluentui/react-components";
 
-import type {
-  DisputeFormData,
-  ICASOCNT,
-  ICASODPH,
-  ICASODPT,
-  ICASOINV,
+import {
+  priorities,
+  type DisputeFormData,
+  type ICASOCNT,
+  type ICASODPH,
+  type ICASODPT,
+  type ICASOINV,
 } from "./dto/dto";
 import { CustomerSearchList } from "./CustomerSearchList";
 import { InvoicesComboBox } from "./InvoicesComboBox";
@@ -33,14 +37,42 @@ import { useCreateDispute } from "@/hooks/useCreateDispute";
 import { useInvoicesByCustomer } from "@/hooks/useInvoicesByCustomer";
 import { DisputeTypesCombobox } from "./DisputeTypesComboBox";
 import { DisputeHandlersCombobox } from "./DisputeHandlersComboBox";
+import { DatePicker } from "@fluentui/react-datepicker-compat";
+import { PrioritiesCombobox, type PriorityOption } from "./PrioritiesComboBox";
+import { Mail20Regular, MailRead20Regular } from "@fluentui/react-icons";
+import { Collapse } from "@fluentui/react-motion-components-preview";
 
 const useStyles = makeStyles({
   root: {
-    display: "grid",
-    gridTemplateRows: "repeat(1fr)",
-    justifyItems: "start",
-    gap: "2px",
-    maxWidth: "400px",
+    padding: tokens.spacingHorizontalM,
+    paddingTop: tokens.spacingVerticalM,
+    paddingBottom: tokens.spacingVerticalM,
+    maxWidth: "420px",
+    margin: "0 auto",
+  },
+
+  card: {
+    display: "flex",
+    flexDirection: "column",
+
+    padding: tokens.spacingVerticalM,
+  },
+
+  section: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalM,
+  },
+
+  sectionHeader: {
+    fontWeight: tokens.fontWeightSemibold,
+    fontSize: tokens.fontSizeBase300,
+    color: tokens.colorNeutralForeground2,
+  },
+
+  smallSwitch: {
+    transform: "scale(0.85)",
+    transformOrigin: "left center",
   },
 
   instructions: {
@@ -66,13 +98,6 @@ const useStyles = makeStyles({
     position: "fixed",
     right: "15px",
     bottom: "15px",
-  },
-
-  card: {
-    margin: "auto",
-    width: "100%",
-    maxWidth: "100%",
-    marginBottom: "15px",
   },
 
   listbox: {
@@ -120,7 +145,10 @@ export const App = () => {
   );
 
   const [formData, setFormData] = useState<DisputeFormData>(initialFormData);
+  const [selectedPriority, setSelectedPriority] =
+    React.useState<PriorityOption | null>(null);
 
+  const [visible, setVisible] = React.useState<boolean>(false);
   const styles = useStyles();
 
   // ---- HOOK: wspólne dane z API na podstawie e-maila nadawcy ----
@@ -174,11 +202,18 @@ export const App = () => {
   // zmiana klienta
   const handleCustomerChange = useCallback((casocnt: ICASOCNT | null) => {
     setSelectedCustomer(casocnt);
+
+    //Czyscicmy pozostale zapamietane stany ...
+    setSelectedPriority(null);
     setFormData((prev) => ({
       ...prev,
       customerNumber: casocnt ?? undefined,
       invoiceNumber: undefined, // bo invoice już nie pasuje
       disputeType: undefined,
+      disputeHandler: undefined,
+      actionDate: undefined,
+      description: undefined,
+      priority: undefined,
     }));
     setOpenCustomersDialog(false);
   }, []);
@@ -197,6 +232,18 @@ export const App = () => {
   const handleDisputeHandlerChange = useCallback((casodph: ICASODPH | null) => {
     setFormData((prev) => ({ ...prev, disputeHandler: casodph ?? undefined }));
   }, []);
+
+  // zmiana priority
+  const handlePriorityChange = useCallback(
+    (priority: PriorityOption | null) => {
+      setSelectedPriority(priority);
+      setFormData((prev) => ({
+        ...prev,
+        priority: priority?.value ?? undefined,
+      }));
+    },
+    []
+  );
 
   // handler Save – używa hooka useCreateDispute
   const handleSave = React.useCallback(async () => {
@@ -299,7 +346,8 @@ export const App = () => {
         </MessageBar>
       )}
 
-      <Card>
+      <Card className={styles.card}>
+        <Text className={styles.sectionHeader}>Customer</Text>
         <div>
           <div>
             {commonLoading ? (
@@ -333,14 +381,14 @@ export const App = () => {
           <div
             style={{
               display: "flex",
-              marginTop: "15px",
-              marginBottom: "15px",
-              gap: "10px",
+              marginTop: "11px",
+
+              gap: "7px",
               alignItems: "center",
             }}
           >
-            <Avatar aria-label="Guest" size={24} />
-            <Text size={300} className="text-muted-foreground">
+            <MailRead20Regular />
+            <Text size={200} className="text-muted-foreground">
               {senderEmail}
             </Text>
           </div>
@@ -385,7 +433,8 @@ export const App = () => {
 
       <Separator height={10} />
 
-      <Card>
+      <Card className={styles.card}>
+        <Text className={styles.sectionHeader}>Dispute Details</Text>
         <InvoicesComboBox
           key={`inv-${selectedCustomer?.NANUM ?? "none"}`}
           error={commonError ?? ""}
@@ -413,20 +462,104 @@ export const App = () => {
           onSelectedChange={handleDisputeHandlerChange}
         />
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-          <div className={styles.buttonContainer}>
-            <Button
-              appearance="primary"
-              disabled={isSaving || !isFormValid}
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+          }}
+        >
+          <Field
+            size="small"
+            style={{ flex: 1 }}
+            label={
+              <InfoLabel info="Example info" size="small">
+                Action Date
+              </InfoLabel>
+            }
+            required
+            validationState={error ? "error" : "none"}
+            validationMessage={error || ""}
+          >
+            <DatePicker
+              key={`dpicker-${selectedCustomer?.NANUM ?? "none"}`}
+              style={{ minWidth: "unset", width: "100%", maxWidth: "100%" }}
+              input={{ style: { width: "100%" } }}
               size="small"
-              icon={isSaving ? <Spinner size="extra-tiny" /> : null}
-              onClick={handleSave}
-            >
-              {isSaving ? "Saving..." : "Save"}
-            </Button>
-          </div>
+              allowTextInput
+              placeholder="Select a date..."
+              value={formData.actionDate}
+              onSelectDate={(date) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  actionDate: date ?? new Date(), // albo date ?? new Date() jeśli chcesz mieć zawsze Date
+                }));
+              }}
+            />
+          </Field>
+
+          <PrioritiesCombobox
+            key={`prio-${selectedCustomer?.NANUM ?? "none"}`}
+            priorities={priorities}
+            selectedPriority={selectedPriority}
+            onSelectedChange={handlePriorityChange}
+            isLoading={false}
+            error=""
+            containerStyle={{ flex: 1 }} // 👈 TERAZ SAM KOMPONENT JEST FLEX ITEM
+          />
         </div>
       </Card>
+      <Separator height={10} />
+      <Card className={styles.card}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Text className={styles.sectionHeader}>Description</Text>
+
+          <Switch
+            className={styles.smallSwitch}
+            checked={visible}
+            onChange={() => setVisible((v) => !v)}
+          />
+        </div>
+
+        <Collapse visible={visible}>
+          <Field size="small">
+            <Textarea
+              key={`text-${selectedCustomer?.NANUM ?? "none"}`}
+              size="small"
+              rows={10}
+              resize="vertical"
+              appearance="outline"
+              onChange={(_, data) => {
+                setFormData((f) => ({
+                  ...f,
+                  description: data.value ?? undefined,
+                }));
+              }}
+              value={formData.description}
+              placeholder="Describe the dispute in detail..."
+            />
+          </Field>
+        </Collapse>
+      </Card>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+        <div className={styles.buttonContainer}>
+          <Button
+            appearance="primary"
+            disabled={isSaving || !isFormValid}
+            size="small"
+            icon={isSaving ? <Spinner size="extra-tiny" /> : null}
+            onClick={handleSave}
+          >
+            {isSaving ? "Saving..." : "Save"}
+          </Button>
+        </div>
+      </div>
     </>
   );
 };

@@ -56,7 +56,7 @@ export interface DisputeFormData {
   disputeHandler?: ICASODPH;
   invoiceNumber?: ICASOINV;
   actionDate?: Date;
-  priority: number;
+  priority?: number;
   description?: string;
   from?: string;
   to?: string;
@@ -66,3 +66,10 @@ export interface DisputeFormData {
   graphMessageId?: string;
   attachments?: MimeAttachment[];
 }
+
+export const priorities = [
+  { value: 4, label: "Low", color: "success" },
+  { value: 3, label: "Medium", color: "warning" },
+  { value: 2, label: "High", color: "danger" },
+  { value: 1, label: "Critical", color: "severe" },
+];

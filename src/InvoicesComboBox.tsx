@@ -219,7 +219,8 @@ export const InvoicesComboBox = React.memo(
                 }
               }}
               selectedOptions={selectedOptionValue ? [selectedOptionValue] : []}
-              style={{ width: "100%" }}
+              style={{ minWidth: "unset", width: "100%", maxWidth: "100%" }}
+              input={{ style: { width: "100%" } }}
             >
               <VirtualList
                 className={styles.listRoot}
