@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CashCollectingApi } from "@/api/CashCollectingApi.ts";
+import { CashCollectingApi } from "@/api/CashCollectingApi";
 import type { ICommonDataResponse } from "@/dto/dto";
 import { HttpError } from "@/lib/http/httpClient";
 import { generateMockCommonData } from "@/api/mockCommonData";
@@ -33,12 +33,12 @@ export const useCommonData = (
     setError(null);
 
     try {
-      //const resp = await CashCollectingApi.getCommonData(email);
+      const resp = await CashCollectingApi.getCommonData(email);
 
-      const resp = generateMockCommonData();
+      //const resp = generateMockCommonData();
 
       // symulacja opóźnienia backendu
-      await new Promise((r) => setTimeout(r, 800));
+      // await new Promise((r) => setTimeout(r, 800));
 
       setData(resp);
     } catch (err: unknown) {
@@ -83,7 +83,7 @@ export const useCommonData = (
     return () => {
       cancelled = true;
     };
-  }, [email, fetchData]);
+  }, [email]);
 
   return {
     data,

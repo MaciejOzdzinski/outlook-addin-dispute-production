@@ -2,7 +2,7 @@ import * as React from "react";
 import { CashCollectingApi } from "@/api/CashCollectingApi";
 import type { ICASOINV } from "@/dto/dto";
 import { HttpError } from "@/lib/http/httpClient";
-import { generateMockInvoicesForCustomer } from "@/api/mockInvoices";
+//import { generateMockInvoicesForCustomer } from "@/api/mockInvoices";
 
 export interface UseInvoicesByCustomerResult {
   data: ICASOINV[] | null;
@@ -33,9 +33,9 @@ export const useInvoicesByCustomer = (
 
     try {
       // jeśli API zwraca pojedynczą fakturę, zmień typ na ICASOINV
-      // const resp = await CashCollectingApi.getInvoicesByCustomer(nanum);
+      const resp = await CashCollectingApi.getInvoicesByCustomer(nanum);
 
-      const resp = generateMockInvoicesForCustomer(nanum, 20);
+      //const resp = generateMockInvoicesForCustomer(nanum, 20);
 
       // tu zakładam, że odpowiedź to tablica; jeśli nie – dopasuj:
       const invoices = Array.isArray(resp) ? resp : [resp];
@@ -55,8 +55,8 @@ export const useInvoicesByCustomer = (
         );
 
         if (err.response) {
-          const raw = await err.response.text().catch(() => "");
-          console.debug("getInvoicesByCustomer RAW RESPONSE:", raw);
+          //  const raw = await err.response.text().catch(() => "");
+          //  console.debug("getInvoicesByCustomer RAW RESPONSE:", raw);
         }
       } else {
         console.error("getInvoicesByCustomer unexpected error:", err);
@@ -85,7 +85,8 @@ export const useInvoicesByCustomer = (
     return () => {
       cancelled = true;
     };
-  }, [nanum, fetchData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nanum]);
 
   return {
     data,

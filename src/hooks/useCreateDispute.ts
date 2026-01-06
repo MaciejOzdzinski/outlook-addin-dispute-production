@@ -63,9 +63,14 @@ export const useCreateDispute = (): UseCreateDisputeResult => {
           body: mimeObj.htmlBody ?? "",
           graphMessageId: restId,
           attachments: mimeObj.attachments ?? [],
+          recievedDate: message.dateTimeCreated ?? new Date(),
         };
 
-        const ok = await CashCollectingApi.createDispute(payload);
+        const response = await CashCollectingApi.createDispute(payload);
+
+        console.log("createDispute response:", response);
+
+        const ok = response.success;
 
         if (!ok) {
           setError("Dispute was not created (API returned false).");
@@ -90,15 +95,13 @@ export const useCreateDispute = (): UseCreateDisputeResult => {
               /* ignore */
             }
           }
-        } else {
-          console.error("createDispute unexpected error:", err);
-          setError("Unexpected error while creating dispute.");
-        }
 
-        return false;
+          return false;
+        }
       } finally {
         setLoading(false);
       }
+      return false;
     },
     []
   );

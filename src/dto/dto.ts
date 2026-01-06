@@ -47,7 +47,7 @@ export interface ICASOINV {
   DTDOTY: string;
   DTIDNO: number;
   DTTTXT: string;
-  DLPIDS: ICASODPD[];
+  DLPIDS?: ICASODPD[];
 }
 
 export interface DisputeFormData {
@@ -55,8 +55,8 @@ export interface DisputeFormData {
   disputeType?: ICASODPT;
   disputeHandler?: ICASODPH;
   invoiceNumber?: ICASOINV;
-  actionDate?: Date;
-  priority?: number;
+  actionDate?: Date | undefined;
+  priority: number | undefined;
   description?: string;
   from?: string;
   to?: string;
@@ -65,6 +65,7 @@ export interface DisputeFormData {
   disputeToUpdate?: ICASODPD;
   graphMessageId?: string;
   attachments?: MimeAttachment[];
+  recievedDate?: Date;
 }
 
 export const priorities = [

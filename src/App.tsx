@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
 import {
   Button,
   Text,
@@ -11,7 +11,6 @@ import {
   SkeletonItem,
   CompoundButton,
   Persona,
-  Avatar,
   Field,
   Spinner,
   tokens,
@@ -19,12 +18,18 @@ import {
   InfoLabel,
   Textarea,
   Switch,
+  Toaster,
+  useToastController,
+  ToastPosition,
+  ToastTitle,
+  Toast,
 } from "@fluentui/react-components";
 
 import {
   priorities,
   type DisputeFormData,
   type ICASOCNT,
+  type ICASODPD,
   type ICASODPH,
   type ICASODPT,
   type ICASOINV,
@@ -39,8 +44,11 @@ import { DisputeTypesCombobox } from "./DisputeTypesComboBox";
 import { DisputeHandlersCombobox } from "./DisputeHandlersComboBox";
 import { DatePicker } from "@fluentui/react-datepicker-compat";
 import { PrioritiesCombobox, type PriorityOption } from "./PrioritiesComboBox";
-import { Mail20Regular, MailRead20Regular } from "@fluentui/react-icons";
+import { MailRead20Regular } from "@fluentui/react-icons";
 import { Collapse } from "@fluentui/react-motion-components-preview";
+import { DisputesSingleSelectTable } from "./DisputesSingleSelectTable";
+import { set } from "date-fns";
+import convertNumberToDate from "./lib/convertNumberToDate";
 
 const useStyles = makeStyles({
   root: {
@@ -113,7 +121,7 @@ const initialFormData: DisputeFormData = {
   customerNumber: undefined,
   disputeType: undefined,
   disputeHandler: undefined,
-  actionDate: new Date(),
+  actionDate: undefined,
   priority: 0,
   description: "",
   invoiceNumber: undefined,
@@ -144,11 +152,36 @@ export const App = () => {
     null
   );
 
+  const [selectedDispute, setSelectedDispute] = useState<ICASODPD | undefined>(
+    undefined
+  );
+
+  // Dane formularza
   const [formData, setFormData] = useState<DisputeFormData>(initialFormData);
-  const [selectedPriority, setSelectedPriority] =
-    React.useState<PriorityOption | null>(null);
+  const [selectedPriority, setSelectedPriority] = React.useState<
+    PriorityOption | undefined
+  >(undefined);
 
   const [visible, setVisible] = React.useState<boolean>(false);
+
+  // Toast
+  const toasterId = useId();
+  const { dispatchToast } = useToastController(toasterId);
+  const [position, setPosition] = React.useState<ToastPosition>("bottom-start");
+
+  const notify = () => {
+    console.log("Notifying toast...", formData?.disputeToUpdate);
+    dispatchToast(
+      <Toast appearance="inverted">
+        <ToastTitle>
+          Dispute{" "}
+          {formData?.disputeToUpdate === undefined ? "created" : "updated"}
+        </ToastTitle>
+      </Toast>,
+      { position, intent: "success" }
+    );
+  };
+
   const styles = useStyles();
 
   // ---- HOOK: wspólne dane z API na podstawie e-maila nadawcy ----
@@ -159,12 +192,7 @@ export const App = () => {
     reload: reloadCommon,
   } = useCommonData(senderEmail);
 
-  const {
-    data: invoices,
-    loading: invoicesLoading,
-    error: invoicesError,
-    reload: reloadInvoices,
-  } = useInvoicesByCustomer(selectedCustomer?.NANUM);
+  const { data: invoices } = useInvoicesByCustomer(selectedCustomer?.NANUM);
 
   // ---- HOOK: tworzenie dispute ----
   const {
@@ -203,8 +231,10 @@ export const App = () => {
   const handleCustomerChange = useCallback((casocnt: ICASOCNT | null) => {
     setSelectedCustomer(casocnt);
 
+    //Czyścimy powiązane stany
+    setSelectedDispute(undefined);
     //Czyscicmy pozostale zapamietane stany ...
-    setSelectedPriority(null);
+    setSelectedPriority(undefined);
     setFormData((prev) => ({
       ...prev,
       customerNumber: casocnt ?? undefined,
@@ -218,9 +248,24 @@ export const App = () => {
     setOpenCustomersDialog(false);
   }, []);
 
+  const handleDisputesPopoverOpenChange = React.useCallback(
+    (_: unknown, data: { open: boolean }) => {
+      setOpenDisputesDialog(data.open);
+    },
+    [setOpenDisputesDialog]
+  );
+
+  const handleDisputeChange = useCallback((casodpd: ICASODPD | undefined) => {
+    setSelectedDispute(casodpd ?? undefined);
+  }, []);
+
   // zmiana faktury
   const handleInvoiceChange = useCallback((casoinv: ICASOINV | null) => {
     setFormData((prev) => ({ ...prev, invoiceNumber: casoinv ?? undefined }));
+    setSelectedDispute(undefined);
+    if ((casoinv?.DLPIDS ?? []).length > 0) {
+      setOpenDisputesDialog(true);
+    }
   }, []);
 
   // zmiana dispute type
@@ -251,6 +296,8 @@ export const App = () => {
     if (ok) {
       // TODO: toast / komunikat sukcesu
       console.log("Dispute utworzony.");
+
+      void notify();
     } else {
       // błąd domenowy lub HTTP – szczegóły są w saveError
       console.warn("Dispute not created.");
@@ -265,7 +312,7 @@ export const App = () => {
         formData.disputeHandler?.DHECOD &&
         formData.actionDate instanceof Date &&
         !isNaN(formData.actionDate.getTime()) &&
-        formData.priority > 0 &&
+        (formData.priority ?? 0) > 0 &&
         formData.invoiceNumber?.DTIDNO
     );
   }, [formData]);
@@ -314,6 +361,19 @@ export const App = () => {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (customers.length === 1 && selectedCustomer == null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedCustomer(customers[0]);
+      setFormData((f) => ({ ...f, customerNumber: customers[0] }));
+    }
+
+    if (customers.length > 1 && selectedCustomer == null) {
+      setOpenCustomersDialog(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customers]);
 
   return (
     <>
@@ -444,6 +504,76 @@ export const App = () => {
           onSelectedChange={handleInvoiceChange}
         />
 
+        <Popover
+          open={openDisputesDialog}
+          onOpenChange={handleDisputesPopoverOpenChange}
+        >
+          <PopoverSurface tabIndex={-1}>
+            {(formData.invoiceNumber?.DLPIDS ?? []).length > 0 && (
+              <div>
+                <Text size={300}>Select dispute:</Text>
+                <div style={{ marginBottom: "10px" }} />
+                <DisputesSingleSelectTable
+                  items={formData?.invoiceNumber?.DLPIDS ?? []}
+                  onSelectionChange={handleDisputeChange}
+                  selectedDispute={selectedDispute}
+                />
+              </div>
+            )}
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "5px",
+                marginTop: "10px",
+              }}
+            >
+              <Button
+                disabled={!selectedDispute}
+                size="small"
+                onClick={() => {
+                  //Wyczysc formData i ustaw nowe dane
+                  setFormData((prev) => ({
+                    ...prev,
+                    disputeToUpdate: selectedDispute,
+                    disputeHandler: disputeHandlers.find(
+                      (p) => p.DHECOD.trim() === selectedDispute?.DPDHND.trim()
+                    ),
+                    disputeType: disputeTypes.find(
+                      (r) => r.DTHCOD.trim() === selectedDispute?.DPHCOD.trim()
+                    ),
+                    description: selectedDispute?.DPMSGD,
+                    priority: selectedDispute?.DPPRIO,
+                    actionDate: convertNumberToDate(
+                      selectedDispute?.DPADAT ?? undefined
+                    ),
+                  }));
+
+                  setSelectedPriority(
+                    priorities.find(
+                      (p) => p.value === selectedDispute?.DPPRIO
+                    ) || undefined
+                  );
+                  setOpenDisputesDialog(false);
+                }}
+              >
+                Apply
+              </Button>
+              <Button
+                size="small"
+                onClick={() => {
+                  setSelectedDispute(undefined);
+                  setFormData((f) => ({ ...f, disputeToUpdate: undefined }));
+                  setOpenDisputesDialog(false);
+                }}
+              >
+                Close
+              </Button>
+            </div>
+          </PopoverSurface>
+        </Popover>
+
         <DisputeTypesCombobox
           key={`dtype-${selectedCustomer?.NANUM ?? "none"}`}
           error={commonError ?? ""}
@@ -491,7 +621,7 @@ export const App = () => {
               onSelectDate={(date) => {
                 setFormData((prev) => ({
                   ...prev,
-                  actionDate: date ?? new Date(), // albo date ?? new Date() jeśli chcesz mieć zawsze Date
+                  actionDate: date ?? undefined,
                 }));
               }}
             />
@@ -558,6 +688,7 @@ export const App = () => {
           >
             {isSaving ? "Saving..." : "Save"}
           </Button>
+          <Toaster toasterId={toasterId} />
         </div>
       </div>
     </>

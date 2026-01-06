@@ -1,5 +1,5 @@
-import { HttpClient } from "@/lib/http/httpClient.ts";
-import { apiConfig } from "@/lib/http/config.ts";
+import { HttpClient } from "@/lib/http/httpClient";
+import { apiConfig } from "@/lib/http/config";
 import { getAccessToken, refreshToken } from "@/lib/http/auth";
 import type {
   DisputeFormData,
@@ -62,14 +62,20 @@ export const CashCollectingApi = {
       GraphMessageId: data.graphMessageId,
       DisputeToUpdateId: data?.disputeToUpdate?.DPPID?.toString() || undefined,
       Attachments: data?.attachments,
+      RecievedDate: data.recievedDate
+        ? format(data.recievedDate, "yyyyMMdd")
+        : undefined,
     };
 
     //inference
-    const result = httpClient.post<boolean>(EndpointsAPI.createdispute, dto);
-    return;
+    const result = httpClient.post<{ success: boolean }>(
+      EndpointsAPI.createdispute,
+      dto
+    );
+    return result;
   },
 
-  update: (id: number, payload: DisputeFormData) =>
+  update: (payload: DisputeFormData) =>
     httpClient.put<DisputeFormData, DisputeFormData>(
       EndpointsAPI.createDispute,
       payload

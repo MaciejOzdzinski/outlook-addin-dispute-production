@@ -111,7 +111,7 @@ export const CustomerCombobox = React.memo(
             style={{
               height: Math.min(
                 LIST_HEIGHT,
-                filteredCustomers.length * ITEM_HEIGHT
+                filteredCustomers.length * ITEM_HEIGHT + 10
               ),
               width: "100%",
             }}

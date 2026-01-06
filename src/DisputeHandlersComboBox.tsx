@@ -14,10 +14,10 @@ import {
 import { List as VirtualList, type RowComponentProps } from "react-window";
 import type { ICASODPH } from "./dto/dto";
 import { startTransition } from "react";
-import { DocumentText20Regular } from "@fluentui/react-icons";
+import { PersonLightning20Regular } from "@fluentui/react-icons";
 import { highlightMatch } from "./lib/HighlightMatch";
 
-const ITEM_HEIGHT = 46; // wysokość jednego wiersza listy (dopasuj do swojego UI)
+const ITEM_HEIGHT = 32; // wysokość jednego wiersza listy (dopasuj do swojego UI)
 const LIST_HEIGHT = 500; // maksymalna wysokość dropdowna
 
 const useStyles = makeStyles({
@@ -106,6 +106,7 @@ export const DisputeHandlersCombobox = React.memo(
 
     // tekst wpisany w combobox (to, co user widzi w input comboboxa)
     const [search, setSearch] = React.useState<string>("");
+    const [isTyping, setIsTyping] = React.useState(false);
 
     // 🚀 opóźniona wartość do ciężkiego filtrowania
     const deferredSearch = React.useDeferredValue(search);
@@ -138,18 +139,35 @@ export const DisputeHandlersCombobox = React.memo(
       });
     }, [disputeHandlers, deferredSearch]);
 
+    React.useEffect(() => {
+      if (isTyping) return;
+
+      if (!selectedDisputeHandler) {
+        setSearch("");
+        return;
+      }
+
+      setSearch(
+        `${selectedDisputeHandler?.DHEDES} (${selectedDisputeHandler?.DHECOD})`
+      );
+    }, [selectedDisputeHandler, isTyping]);
+
     const onOptionSelect: ComboboxProps["onOptionSelect"] = (_, data) => {
       const id = data.optionValue ? data.optionValue : null;
       const findDisputeHandler =
         filteredDisputeHandlers.find((c) => c.DHECOD === id) || null;
       onSelectedChange(findDisputeHandler);
 
-      if (id == null) {
+      if (id == null || !findDisputeHandler) {
+        setIsTyping(false);
         setSearch("");
         return;
       }
 
-      setSearch(`${findDisputeHandler?.DHEDES}(${findDisputeHandler?.DHECOD})`);
+      setIsTyping(false);
+      setSearch(
+        `${findDisputeHandler?.DHEDES} (${findDisputeHandler?.DHECOD})`
+      );
     };
 
     // 🔍 pojedynczy wiersz do react-window
@@ -158,7 +176,7 @@ export const DisputeHandlersCombobox = React.memo(
     const Row = ({ index, style }: RowComponentProps) => {
       const disputeHandler = filteredDisputeHandlers[index];
 
-      const primaryText = `${disputeHandler?.DHEDES}(${disputeHandler?.DHECOD})`;
+      const primaryText = `${disputeHandler?.DHEDES} (${disputeHandler?.DHECOD})`;
       // 👇 useMemo: highlight liczy się tylko, gdy zmieni się tekst lub zapytanie
       const highlighted = React.useMemo(
         () => highlightMatch(primaryText, deferredSearch),
@@ -171,10 +189,10 @@ export const DisputeHandlersCombobox = React.memo(
             className={styles.rowBase}
             key={disputeHandler.DHECOD}
             value={disputeHandler.DHECOD.toString()}
-            text={`${disputeHandler?.DHEDES}(${disputeHandler?.DHECOD})`}
+            text={`${disputeHandler?.DHEDES} (${disputeHandler?.DHECOD})`}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <DocumentText20Regular />
+              <PersonLightning20Regular />
 
               <span>{highlighted}</span>
             </div>
@@ -211,6 +229,7 @@ export const DisputeHandlersCombobox = React.memo(
               value={search}
               // pisanie w input -> zmiana query + czyszczenie wyboru
               onChange={(ev) => {
+                setIsTyping(true);
                 // użytkownik coś pisze → aktualizujemy query
                 setSearch(ev.target.value);
                 // wpisywanie ręczne kasuje aktualny wybór
@@ -221,6 +240,7 @@ export const DisputeHandlersCombobox = React.memo(
                 if (data.open) {
                   // chcemy znowu zobaczyć wszystkie faktury
                   setfilteredDisputeHandlers(disputeHandlers);
+                  setIsTyping(false);
                 }
               }}
               selectedOptions={selectedOptionValue ? [selectedOptionValue] : []}
@@ -231,12 +251,12 @@ export const DisputeHandlersCombobox = React.memo(
                 className={styles.listRoot}
                 rowComponent={Row}
                 rowCount={filteredDisputeHandlers.length}
-                rowHeight={46}
+                rowHeight={ITEM_HEIGHT}
                 rowProps={{ disputeHandlers: filteredDisputeHandlers }}
                 style={{
                   height: Math.min(
                     LIST_HEIGHT,
-                    filteredDisputeHandlers.length * ITEM_HEIGHT
+                    filteredDisputeHandlers.length * ITEM_HEIGHT + 10
                   ),
                   width: "100%",
                 }}

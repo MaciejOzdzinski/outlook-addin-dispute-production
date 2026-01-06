@@ -14,10 +14,9 @@ import {
 import { List as VirtualList, type RowComponentProps } from "react-window";
 import type { ICASODPT } from "./dto/dto";
 import { startTransition } from "react";
-import { DocumentText20Regular } from "@fluentui/react-icons";
 import { highlightMatch } from "./lib/HighlightMatch";
 
-const ITEM_HEIGHT = 46; // wysokość jednego wiersza listy (dopasuj do swojego UI)
+const ITEM_HEIGHT = 32; // wysokość jednego wiersza listy (dopasuj do swojego UI)
 const LIST_HEIGHT = 500; // maksymalna wysokość dropdowna
 
 const useStyles = makeStyles({
@@ -109,6 +108,7 @@ export const DisputeTypesCombobox = React.memo(
 
     // 🚀 opóźniona wartość do ciężkiego filtrowania
     const deferredSearch = React.useDeferredValue(search);
+    const [isTyping, setIsTyping] = React.useState(false);
 
     // wynik filtrowania trzymamy w stanie
     const [filteredDisputeTypes, setFilteredDisputeTypes] =
@@ -138,18 +138,34 @@ export const DisputeTypesCombobox = React.memo(
       });
     }, [disputeTypes, deferredSearch]);
 
+    React.useEffect(() => {
+      if (isTyping) return;
+
+      if (!selectedDisputeType) {
+        setSearch("");
+        return;
+      }
+
+      setSearch(
+        `${selectedDisputeType.DTHDES} (${selectedDisputeType.DTHCOD})`
+      );
+    }, [selectedDisputeType, isTyping]);
+
     const onOptionSelect: ComboboxProps["onOptionSelect"] = (_, data) => {
       const id = data.optionValue ? data.optionValue : null;
       const findDisputeType =
         filteredDisputeTypes.find((c) => c.DTHCOD === id) || null;
       onSelectedChange(findDisputeType);
 
-      if (id == null) {
+      if (id == null || !findDisputeType) {
+        setIsTyping(false);
         setSearch("");
         return;
       }
 
-      setSearch(`${findDisputeType?.DTHDES}(${findDisputeType?.DTHCOD})`);
+      setIsTyping(false);
+
+      setSearch(`${findDisputeType?.DTHDES} (${findDisputeType?.DTHCOD})`);
     };
 
     // 🔍 pojedynczy wiersz do react-window
@@ -158,7 +174,7 @@ export const DisputeTypesCombobox = React.memo(
     const Row = ({ index, style }: RowComponentProps) => {
       const disputeType = filteredDisputeTypes[index];
 
-      const primaryText = `${disputeType?.DTHDES}(${disputeType?.DTHCOD})`;
+      const primaryText = `${disputeType?.DTHDES} (${disputeType?.DTHCOD})`;
       // 👇 useMemo: highlight liczy się tylko, gdy zmieni się tekst lub zapytanie
       const highlighted = React.useMemo(
         () => highlightMatch(primaryText, deferredSearch),
@@ -171,11 +187,9 @@ export const DisputeTypesCombobox = React.memo(
             className={styles.rowBase}
             key={disputeType.DTHCOD}
             value={disputeType.DTHCOD.toString()}
-            text={`${disputeType?.DTHDES}(${disputeType?.DTHCOD})`}
+            text={`${disputeType?.DTHDES} (${disputeType?.DTHCOD})`}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <DocumentText20Regular />
-
               <span>{highlighted}</span>
             </div>
           </Option>
@@ -221,6 +235,7 @@ export const DisputeTypesCombobox = React.memo(
                 if (data.open) {
                   // chcemy znowu zobaczyć wszystkie faktury
                   setFilteredDisputeTypes(disputeTypes);
+                  setIsTyping(false);
                 }
               }}
               selectedOptions={selectedOptionValue ? [selectedOptionValue] : []}
@@ -231,12 +246,12 @@ export const DisputeTypesCombobox = React.memo(
                 className={styles.listRoot}
                 rowComponent={Row}
                 rowCount={filteredDisputeTypes.length}
-                rowHeight={46}
+                rowHeight={ITEM_HEIGHT}
                 rowProps={{ disputeTypes: filteredDisputeTypes }}
                 style={{
                   height: Math.min(
                     LIST_HEIGHT,
-                    filteredDisputeTypes.length * ITEM_HEIGHT
+                    filteredDisputeTypes.length * ITEM_HEIGHT + 10
                   ),
                   width: "100%",
                 }}

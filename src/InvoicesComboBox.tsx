@@ -16,7 +16,7 @@ import type { ICASOINV } from "./dto/dto";
 import { startTransition } from "react";
 import { DocumentText20Regular } from "@fluentui/react-icons";
 
-const ITEM_HEIGHT = 46; // wysokość jednego wiersza listy (dopasuj do swojego UI)
+const ITEM_HEIGHT = 42; // wysokość jednego wiersza listy (dopasuj do swojego UI)
 const LIST_HEIGHT = 500; // maksymalna wysokość dropdowna
 
 const useStyles = makeStyles({
@@ -105,6 +105,7 @@ export const InvoicesComboBox = React.memo(
 
     // tekst wpisany w combobox (to, co user widzi w input comboboxa)
     const [search, setSearch] = React.useState<string>("");
+    const [isTyping, setIsTyping] = React.useState(false);
 
     // 🚀 opóźniona wartość do ciężkiego filtrowania
     const deferredSearch = React.useDeferredValue(search);
@@ -137,17 +138,30 @@ export const InvoicesComboBox = React.memo(
       });
     }, [invoices, deferredSearch]);
 
+    React.useEffect(() => {
+      if (isTyping) return;
+
+      if (!selectedInvoice) {
+        setSearch("");
+        return;
+      }
+
+      setSearch(`${selectedInvoice?.DTDOTY}  ${selectedInvoice?.DTIDNO}`);
+    }, [selectedInvoice, isTyping]);
+
     const onOptionSelect: ComboboxProps["onOptionSelect"] = (_, data) => {
       const id = data.optionValue ? Number(data.optionValue) : null;
       const findInvoice = filteredInvoices.find((c) => c.DTREFX === id) || null;
       onSelectedChange(findInvoice);
 
-      if (id == null) {
+      if (id == null || !findInvoice) {
+        setIsTyping(false);
         setSearch("");
         return;
       }
 
-      setSearch(`${findInvoice?.DTDOTY} - ${findInvoice?.DTIDNO}`);
+      setIsTyping(false);
+      setSearch(`${findInvoice?.DTDOTY}  ${findInvoice?.DTIDNO}`);
     };
 
     // 🔍 pojedynczy wiersz do react-window
@@ -162,16 +176,29 @@ export const InvoicesComboBox = React.memo(
             className={styles.rowBase}
             key={invoice.DTREFX}
             value={invoice.DTREFX.toString()}
-            text={`${invoice.DTDOTY} - ${invoice.DTIDNO}`}
+            text={`${invoice.DTDOTY}  ${invoice.DTIDNO}`}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <DocumentText20Regular />
+              {(invoice?.DLPIDS ?? []).length > 0 && <DocumentText20Regular />}
+              {(invoice?.DLPIDS ?? []).length === 0 && (
+                <div style={{ width: "20px" }} />
+              )}
 
-              <span>
-                {`${invoice.DTDOTY} - ${invoice.DTIDNO}  Amount: ${
-                  invoice.DLPIDS.length > 0 ? invoice.DLPIDS[0].DPCRDT : "N/A"
-                }`}
-              </span>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  fontSize: "small",
+                  boxSizing: "border-box", // padding mieści się w width od react-window
+                }}
+              >
+                <div>{`${invoice.DTDOTY} ${invoice.DTIDNO}`}</div>
+                <div
+                  style={{ fontSize: "10px", marginTop: "-3px", color: "gray" }}
+                >
+                  {invoice.DTTTXT}
+                </div>
+              </div>
             </div>
           </Option>
         </div>
@@ -206,6 +233,7 @@ export const InvoicesComboBox = React.memo(
               value={search}
               // pisanie w input -> zmiana query + czyszczenie wyboru
               onChange={(ev) => {
+                setIsTyping(true);
                 // użytkownik coś pisze → aktualizujemy query
                 setSearch(ev.target.value);
                 // wpisywanie ręczne kasuje aktualny wybór
@@ -216,6 +244,7 @@ export const InvoicesComboBox = React.memo(
                 if (data.open) {
                   // chcemy znowu zobaczyć wszystkie faktury
                   setFilteredInvoices(invoices);
+                  setIsTyping(false);
                 }
               }}
               selectedOptions={selectedOptionValue ? [selectedOptionValue] : []}
@@ -226,12 +255,12 @@ export const InvoicesComboBox = React.memo(
                 className={styles.listRoot}
                 rowComponent={Row}
                 rowCount={filteredInvoices.length}
-                rowHeight={46}
+                rowHeight={ITEM_HEIGHT}
                 rowProps={{ invoices: filteredInvoices }}
                 style={{
                   height: Math.min(
                     LIST_HEIGHT,
-                    filteredInvoices.length * ITEM_HEIGHT
+                    filteredInvoices.length * ITEM_HEIGHT + 10
                   ),
                   width: "100%",
                 }}

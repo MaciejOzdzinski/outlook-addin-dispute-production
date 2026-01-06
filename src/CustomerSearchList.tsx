@@ -216,7 +216,7 @@ export const CustomerSearchList: React.FC<CustomerSearchListProps> = ({
           rowHeight={48}
           rowProps={{ customers: filtered }}
           style={{
-            height: Math.min(LIST_HEIGHT, filtered.length * ITEM_HEIGHT),
+            height: Math.min(LIST_HEIGHT, filtered.length * ITEM_HEIGHT) + 10,
             width: "100%",
           }}
         ></VirtualList>

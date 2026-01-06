@@ -14,16 +14,9 @@ import {
 } from "@fluentui/react-components";
 import { List as VirtualList, type RowComponentProps } from "react-window";
 import { startTransition } from "react";
-import {
-  ErrorCircle16Regular,
-  Warning16Regular,
-  ArrowUp16Regular,
-  ArrowDown16Regular,
-  CheckmarkCircle16Regular,
-} from "@fluentui/react-icons";
 import { highlightMatch } from "./lib/HighlightMatch";
 
-const ITEM_HEIGHT = 40;
+const ITEM_HEIGHT = 32;
 const LIST_HEIGHT = 240;
 
 const mapDotColor = (value: number): string => {
@@ -162,7 +155,7 @@ const useStyles = makeStyles({
 
 export type PrioritiesComboboxProps = {
   priorities: PriorityOption[];
-  selectedPriority: PriorityOption | null;
+  selectedPriority: PriorityOption | undefined;
   onSelectedChange: (priority: PriorityOption | null) => void;
   isLoading?: boolean;
   error?: string;
@@ -195,6 +188,7 @@ export const PrioritiesCombobox = React.memo(
 
     // tekst wpisany w combobox
     const [search, setSearch] = React.useState<string>("");
+    const [isTyping, setIsTyping] = React.useState(false);
 
     // opóźniona wartość do filtrowania
     const deferredSearch = React.useDeferredValue(search);
@@ -229,11 +223,26 @@ export const PrioritiesCombobox = React.memo(
       });
     }, [sortedPriorities, deferredSearch]);
 
+    // ✅ Sync input value z selectedPriority (gdy parent ustawi wartość)
+    React.useEffect(() => {
+      if (isTyping) return;
+
+      if (!selectedPriority) {
+        setSearch("");
+        return;
+      }
+
+      setSearch(selectedPriority.label);
+    }, [selectedPriority, isTyping]);
+
     const onOptionSelect: ComboboxProps["onOptionSelect"] = (_, data) => {
       const val = data.optionValue ? Number(data.optionValue) : null;
       const found = filteredPriorities.find((p) => p.value === val) ?? null;
 
       onSelectedChange(found);
+
+      // user wybrał z listy → nie jest w trybie pisania
+      setIsTyping(false);
 
       if (val == null || !found) {
         setSearch("");
@@ -248,7 +257,10 @@ export const PrioritiesCombobox = React.memo(
       const priority = filteredPriorities[index];
       const primaryText = `${priority.label} (${priority.value})`;
 
-      const highlighted = highlightMatch(primaryText, deferredSearch);
+      const highlighted = React.useMemo(
+        () => highlightMatch(primaryText, deferredSearch),
+        [primaryText, deferredSearch]
+      );
 
       const isSelected =
         selectedPriority && selectedPriority.value === priority.value;
@@ -258,7 +270,7 @@ export const PrioritiesCombobox = React.memo(
           <Option
             className={mergeClasses(
               styles.rowBase,
-              isSelected && styles.rowSelected
+              isSelected ? styles.rowSelected : undefined
             )}
             key={priority.value}
             value={priority.value.toString()}
@@ -325,6 +337,7 @@ export const PrioritiesCombobox = React.memo(
             placeholder="Enter priority"
             value={search}
             onChange={(ev) => {
+              setIsTyping(true);
               setSearch(ev.target.value);
               onSelectedChange(null);
             }}
@@ -332,6 +345,7 @@ export const PrioritiesCombobox = React.memo(
             onOpenChange={(_, data) => {
               if (data.open) {
                 setFilteredPriorities(sortedPriorities);
+                setIsTyping(false);
               }
             }}
             selectedOptions={selectedOptionValue ? [selectedOptionValue] : []}
