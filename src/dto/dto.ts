@@ -1,4 +1,4 @@
-import type { MimeAttachment } from "@/dto/mimeobjects";
+import { MimeAttachment } from "./mimeobjects";
 
 // src/models/api.ts
 export interface ICASOCNT {
@@ -61,7 +61,8 @@ export interface DisputeFormData {
   from?: string;
   to?: string;
   subject?: string;
-  body?: string;
+  EmlBase64?: string;
+  //body?: string;
   disputeToUpdate?: ICASODPD;
   graphMessageId?: string;
   attachments?: MimeAttachment[];

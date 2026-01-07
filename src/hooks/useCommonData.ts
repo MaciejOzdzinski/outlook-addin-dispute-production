@@ -2,7 +2,6 @@ import * as React from "react";
 import { CashCollectingApi } from "@/api/CashCollectingApi";
 import type { ICommonDataResponse } from "@/dto/dto";
 import { HttpError } from "@/lib/http/httpClient";
-import { generateMockCommonData } from "@/api/mockCommonData";
 
 export interface UseCommonDataResult {
   data: ICommonDataResponse | null;

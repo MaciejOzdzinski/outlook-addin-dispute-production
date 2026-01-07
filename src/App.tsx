@@ -129,7 +129,7 @@ const initialFormData: DisputeFormData = {
   from: "",
   to: "",
   subject: "",
-  body: "",
+  EmlBase64: "",
 
   disputeToUpdate: undefined,
 
@@ -673,6 +673,15 @@ export const App = () => {
               value={formData.description}
               placeholder="Describe the dispute in detail..."
             />
+            <Text
+              size={200}
+              style={{
+                marginTop: "4px",
+                color: tokens.colorNeutralForeground3,
+              }}
+            >
+              {formData.description?.length ?? 0} characters
+            </Text>
           </Field>
         </Collapse>
       </Card>

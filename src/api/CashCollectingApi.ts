@@ -41,6 +41,8 @@ export const CashCollectingApi = {
 
   createDispute: (data: DisputeFormData): Promise<{ success: boolean }> => {
     // Spłaszczamy formData (format C# .NET):
+    console.log("CREATE Dispute input data:", data);
+
     const dto = {
       Company: data.customerNumber?.NAACOM,
       CustomerNumber: data.customerNumber?.NANUM,
@@ -51,13 +53,13 @@ export const CashCollectingApi = {
         ? format(data.actionDate, "yyyyMMdd")
         : undefined, // 👈 tylko jeśli data jest
 
-      Priority: data.priority.toString(),
+      Priority: data.priority != null ? String(data.priority) : undefined,
       Description: data.description,
 
       From: data.from,
       To: data.to,
       Subject: data.subject,
-      Body: data.body,
+      EmlBase64: data.EmlBase64,
 
       GraphMessageId: data.graphMessageId,
       DisputeToUpdateId: data?.disputeToUpdate?.DPPID?.toString() || undefined,
@@ -67,6 +69,8 @@ export const CashCollectingApi = {
         : undefined,
     };
 
+    console.log("CREATE Dispute DTO to send:", dto);
+
     //inference
     const result = httpClient.post<{ success: boolean }>(
       EndpointsAPI.createdispute,
@@ -75,11 +79,13 @@ export const CashCollectingApi = {
     return result;
   },
 
-  update: (payload: DisputeFormData) =>
+  update: (payload: DisputeFormData) => {
+    console.log("UPDAYTE Dispute DTO to send:", payload);
     httpClient.put<DisputeFormData, DisputeFormData>(
       EndpointsAPI.createDispute,
       payload
-    ),
+    );
+  },
 
   delete: (id: number) => httpClient.delete<void>(EndpointsAPI.delete(id)),
 };
