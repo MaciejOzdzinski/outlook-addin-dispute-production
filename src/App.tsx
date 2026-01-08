@@ -167,7 +167,7 @@ export const App = () => {
   // Toast
   const toasterId = useId();
   const { dispatchToast } = useToastController(toasterId);
-  const [position, setPosition] = React.useState<ToastPosition>("bottom-start");
+  const [position] = React.useState<ToastPosition>("bottom-start");
 
   const notify = () => {
     console.log("Notifying toast...", formData?.disputeToUpdate);
