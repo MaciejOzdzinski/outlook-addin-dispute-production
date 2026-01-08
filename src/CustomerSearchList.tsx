@@ -15,7 +15,9 @@ const ITEM_HEIGHT = 46; // wysokość jednego wiersza listy (dopasuj do swojego 
 const LIST_HEIGHT = 500; // maksymalna wysokość dropdowna
 
 // funkcja podświetlająca fragmenty tekstu pasujące do zapytania
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function highlightMatch(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   primaryText: any,
   deferredSearch: string
 ): React.ReactNode {
