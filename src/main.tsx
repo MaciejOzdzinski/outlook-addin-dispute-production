@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /// <reference types="office-js" />
 
 import React from "react";
@@ -26,6 +27,7 @@ function getLuminanceFromHex(hex: string): number {
 }
 
 function detectInitialTheme(): Theme {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const win = window as any;
 
   // 1) Jeśli jesteśmy w Outlooku i Office udostępnił officeTheme
@@ -46,7 +48,7 @@ function detectInitialTheme(): Theme {
   return webLightTheme;
 }
 
-function Main() {
+export const Main = () => {
   const [theme, setTheme] = React.useState<Theme>(detectInitialTheme);
 
   React.useEffect(() => {
@@ -101,7 +103,7 @@ function Main() {
       <App />
     </FluentProvider>
   );
-}
+};
 
 function render() {
   const rootElement = document.getElementById("root");
