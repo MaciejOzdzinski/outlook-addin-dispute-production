@@ -240,6 +240,7 @@ export const App = () => {
       invoiceNumber: undefined, // bo invoice już nie pasuje
       disputeType: undefined,
       disputeHandler: undefined,
+      disputeToUpdate: undefined,
       actionDate: undefined,
       description: undefined,
       priority: undefined,
@@ -658,7 +659,7 @@ export const App = () => {
         <Collapse visible={visible}>
           <Field size="small">
             <Textarea
-              key={`text-${selectedCustomer?.NANUM ?? "none"}`}
+              key={`text-${formData?.disputeToUpdate?.DPPID ?? "none"}`}
               size="small"
               rows={10}
               resize="vertical"
@@ -670,6 +671,7 @@ export const App = () => {
                 }));
               }}
               value={formData.description}
+              defaultValue={formData.description}
               placeholder="Describe the dispute in detail..."
             />
             <Text
