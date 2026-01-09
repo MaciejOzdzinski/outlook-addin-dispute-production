@@ -4,11 +4,6 @@ import fs from "fs";
 import path from "path";
 
 export default defineConfig({
-  test: {
-    environment: "jsdom",
-    globals: true,
-    setupFiles: ["src/test/setup.ts"],
-  },
   plugins: [react()],
   build: {
     rollupOptions: {

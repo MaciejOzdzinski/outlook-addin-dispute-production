@@ -31,6 +31,7 @@
     "@eslint/js": "^9.39.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.1",
+    "@types/jest": "^30.0.0",
     "@types/node": "^24.10.1",
     "@types/office-js": "^1.0.560",
     "@types/react": "^19.2.5",
