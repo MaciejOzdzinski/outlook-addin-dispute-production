@@ -101,7 +101,6 @@ export const Main = () => {
 
   return (
     <FluentProvider theme={theme}>
-      <Guitar16Filled />
       <App />
     </FluentProvider>
   );
