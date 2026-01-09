@@ -14,10 +14,9 @@ const EndpointsAPI = {
     `/getcommondata?email=${encodeURIComponent(email)}`,
   getInvoicesByCustomer: (nanum: string) =>
     `/getinvoicesbycustomer?customer=${encodeURIComponent(nanum)}`,
-  createdispute: `/createdispute`,
-  update: (id: number) => `/customers/${id}`,
-  delete: (id: number) => `/customers/${id}`,
   createDispute: `/createdispute`,
+  update: (id: number) => `/disputes/${id}`,
+  delete: (id: number) => `/disputes/${id}`,
 } as const;
 
 /** Lokalny klient HTTP dla domeny customers */
@@ -36,7 +35,7 @@ export const CashCollectingApi = {
   getCommonData: (email: string): Promise<ICommonDataResponse> =>
     httpClient.get<ICommonDataResponse>(EndpointsAPI.getCommonData(email)),
 
-  getInvoicesByCustomer: (nanum: string) =>
+  getInvoicesByCustomer: (nanum: string): Promise<ICASOINV> =>
     httpClient.get<ICASOINV>(EndpointsAPI.getInvoicesByCustomer(nanum)),
 
   createDispute: (data: DisputeFormData): Promise<{ success: boolean }> => {
@@ -71,23 +70,26 @@ export const CashCollectingApi = {
 
     console.log("CREATE Dispute DTO to send:", dto);
 
-    //inference
     const result = httpClient.post<{ success: boolean }>(
-      EndpointsAPI.createdispute,
+      EndpointsAPI.createDispute,
       dto
     );
     return result;
   },
 
-  update: (payload: DisputeFormData) => {
-    console.log("UPDAYTE Dispute DTO to send:", payload);
-    httpClient.put<DisputeFormData, DisputeFormData>(
-      EndpointsAPI.createDispute,
-      payload
+  update: (
+    id: number,
+    payload: DisputeFormData
+  ): Promise<{ success: boolean }> => {
+    console.log("UPDATE Dispute DTO to send:", payload);
+    return httpClient.put<{ success: boolean }, unknown>(
+      EndpointsAPI.update(id),
+      payload as unknown
     );
   },
 
-  delete: (id: number) => httpClient.delete<void>(EndpointsAPI.delete(id)),
+  delete: (id: number): Promise<void> =>
+    httpClient.delete<void>(EndpointsAPI.delete(id)),
 };
 
 export type CashCollectingApiType = typeof CashCollectingApi;
