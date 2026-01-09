@@ -11,6 +11,7 @@ import {
   webDarkTheme,
   type Theme,
 } from "@fluentui/react-components";
+import { Guitar16Filled } from "@fluentui/react-icons";
 
 // pomocniczo: policz jasność koloru #RRGGBB
 function getLuminanceFromHex(hex: string): number {
@@ -100,6 +101,7 @@ export const Main = () => {
 
   return (
     <FluentProvider theme={theme}>
+      <Guitar16Filled />
       <App />
     </FluentProvider>
   );
