@@ -3,7 +3,7 @@ import * as React from "react";
 import type { DisputeFormData } from "@/dto/dto";
 import { CashCollectingApi } from "@/api/CashCollectingApi";
 import { HttpError } from "@/lib/http/httpClient";
-import { getEmlBase64 } from "@/lib/mime";
+import { getEmlBase64 } from "@/lib/MIME";
 
 export interface UseCreateDisputeResult {
   createDispute: (data: DisputeFormData) => Promise<boolean>;
