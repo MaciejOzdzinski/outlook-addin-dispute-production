@@ -24,7 +24,7 @@ const httpClient = new HttpClient({
   baseUrl: apiConfig.customersBaseUrl,
   getAccessToken,
   refreshToken,
-  timeoutMs: 12000,
+  timeoutMs: 24000,
   retry: { attempts: 3, backoffMs: 400 },
   defaultHeaders: { Accept: "application/json" },
   //credentials: "include",
