@@ -16,7 +16,7 @@
   <IconUrl DefaultValue="https://ksrexbe1.rexel-be.local/addin/assets/ico-64.png"/>
   <HighResolutionIconUrl DefaultValue="https://ksrexbe1.rexel-be.local/addin/assets/ico-128.png"/>
 
-  <SupportUrl DefaultValue="https://www.contoso.com/help"/>
+  <SupportUrl DefaultValue="https://ksrexbe1.rexel-be.local/addin/support"/>
 
   <!-- ✅ allowed domains for add-in -->
   <AppDomains>
