@@ -29,6 +29,7 @@ const getCertFiles = () => {
 
 export default defineConfig({
   plugins: [react()],
+  base: "/addin/",
   build: {
     rollupOptions: {
       input: {

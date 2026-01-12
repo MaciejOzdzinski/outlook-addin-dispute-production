@@ -113,6 +113,24 @@ const useStyles = makeStyles({
   option: {
     height: "12px",
   },
+  customerHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "-8px",
+    marginTop: "-10px",
+  },
+  tinySwitch: {
+    transform: "scale(0.7)",
+    transformOrigin: "right center",
+  },
+  descriptionHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: "-10px",
+    marginBottom: "-8px",
+  },
 });
 
 // initial form data
@@ -137,7 +155,16 @@ const initialFormData: DisputeFormData = {
   attachments: undefined,
 };
 
-export const App = () => {
+export const App = ({
+  isDark,
+  onThemeToggle,
+}: {
+  isDark: boolean;
+  onThemeToggle: (
+    _: React.ChangeEvent<HTMLInputElement>,
+    data: { checked: boolean }
+  ) => void;
+}) => {
   const [senderEmail, setSenderEmail] = useState<string | null>(null);
 
   // błąd związany z Outlook / odczytem nadawcy
@@ -407,7 +434,15 @@ export const App = () => {
       )}
 
       <Card className={styles.card}>
-        <Text className={styles.sectionHeader}>Customer</Text>
+        <div className={styles.customerHeader}>
+          <Text className={styles.sectionHeader}>Customer</Text>
+          <Switch
+            checked={isDark}
+            label={isDark ? "Dark" : "Light"}
+            onChange={onThemeToggle}
+            className={styles.tinySwitch}
+          />
+        </div>
         <div>
           <div>
             {commonLoading ? (
@@ -640,13 +675,7 @@ export const App = () => {
       </Card>
       <Separator height={10} />
       <Card className={styles.card}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
+        <div className={styles.descriptionHeader}>
           <Text className={styles.sectionHeader}>Description</Text>
 
           <Switch

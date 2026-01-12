@@ -11,7 +11,6 @@ import {
   webDarkTheme,
   type Theme,
 } from "@fluentui/react-components";
-import { Guitar16Filled } from "@fluentui/react-icons";
 
 // pomocniczo: policz jasność koloru #RRGGBB
 function getLuminanceFromHex(hex: string): number {
@@ -51,6 +50,16 @@ function detectInitialTheme(): Theme {
 
 export const Main = () => {
   const [theme, setTheme] = React.useState<Theme>(detectInitialTheme);
+  const [isDark, setIsDark] = React.useState(theme === webDarkTheme);
+
+  const handleThemeToggle = React.useCallback(
+    (_: React.ChangeEvent<HTMLInputElement>, data: { checked: boolean }) => {
+      const nextIsDark = data.checked;
+      setIsDark(nextIsDark);
+      setTheme(nextIsDark ? webDarkTheme : webLightTheme);
+    },
+    []
+  );
 
   React.useEffect(() => {
     const win = window as any;
@@ -70,7 +79,9 @@ export const Main = () => {
 
         const bg = officeTheme.bodyBackgroundColor as string | undefined;
         const lum = getLuminanceFromHex(bg || "#ffffff");
-        setTheme(lum < 0.5 ? webDarkTheme : webLightTheme);
+        const preferDark = lum < 0.5;
+        setTheme(preferDark ? webDarkTheme : webLightTheme);
+        setIsDark(preferDark);
 
         // (opcjonalnie) jeśli host wspiera event zmiany motywu:
         // tu ostrożnie, bo nie wszystkie klienty Outlooka to wspierają
@@ -83,7 +94,9 @@ export const Main = () => {
               const t = Office.context.officeTheme;
               const bg2 = t?.bodyBackgroundColor as string | undefined;
               const lum2 = getLuminanceFromHex(bg2 || "#ffffff");
-              setTheme(lum2 < 0.5 ? webDarkTheme : webLightTheme);
+              const preferDarkChange = lum2 < 0.5;
+              setTheme(preferDarkChange ? webDarkTheme : webLightTheme);
+              setIsDark(preferDarkChange);
             },
             () => {
               /* ignore errors w dev */
@@ -101,7 +114,7 @@ export const Main = () => {
 
   return (
     <FluentProvider theme={theme}>
-      <App />
+      <App isDark={isDark} onThemeToggle={handleThemeToggle} />
     </FluentProvider>
   );
 };
