@@ -8,7 +8,7 @@ const getCertFiles = () => {
   try {
     const certDir = path.join(
       process.env.USERPROFILE || process.env.HOME || "",
-      ".office-addin-dev-certs"
+      ".office-addin-dev-certs",
     );
 
     const keyPath = path.join(certDir, "localhost.key");
@@ -29,7 +29,7 @@ const getCertFiles = () => {
 
 export default defineConfig({
   plugins: [react()],
-  base: "/addin/",
+  base: "/dispute-production/",
   build: {
     rollupOptions: {
       input: {

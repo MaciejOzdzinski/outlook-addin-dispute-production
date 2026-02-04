@@ -5,7 +5,7 @@
           xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
           xsi:type="MailApp">
 
-  <Id>7b7eb7f5-d35a-42b3-83de-b69ca6b90314</Id>
+  <Id>7b7eb7f5-d35a-42b3-83de-b69ca6b90191</Id>
   <Version>1.0.0.0</Version>
   <ProviderName>Clarior</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
@@ -13,10 +13,10 @@
   <Description DefaultValue="A template to get started."/>
 
   <!-- ✅ intranet icons -->
-  <IconUrl DefaultValue="https://ksrexbe1.rexel-be.local/addin/assets/ico-64.png"/>
-  <HighResolutionIconUrl DefaultValue="https://ksrexbe1.rexel-be.local/addin/assets/ico-128.png"/>
+  <IconUrl DefaultValue="https://ksrexbe1.rexel-be.local/dispute-production/assets/icon-64.png"/>
+  <HighResolutionIconUrl DefaultValue="https://ksrexbe1.rexel-be.local/dispute-production/assets/icon-128.png"/>
 
-  <SupportUrl DefaultValue="https://ksrexbe1.rexel-be.local/addin/support"/>
+  <SupportUrl DefaultValue="https://ksrexbe1.rexel-be.local/dispute-production/support"/>
 
   <!-- ✅ allowed domains for add-in -->
   <AppDomains>
@@ -37,7 +37,7 @@
     <Form xsi:type="ItemRead">
       <DesktopSettings>
         <!-- ✅ intranet taskpane -->
-        <SourceLocation DefaultValue="https://ksrexbe1.rexel-be.local/addin/index.html"/>
+        <SourceLocation DefaultValue="https://ksrexbe1.rexel-be.local/dispute-production/index.html"/>
         <RequestedHeight>250</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -97,15 +97,15 @@
     <Resources>
       <bt:Images>
         <!-- ✅ intranet images -->
-        <bt:Image id="Icon.16x16" DefaultValue="https://ksrexbe1.rexel-be.local/addin/assets/ico-16.png"/>
-        <bt:Image id="Icon.32x32" DefaultValue="https://ksrexbe1.rexel-be.local/addin/assets/ico-32.png"/>
-        <bt:Image id="Icon.80x80" DefaultValue="https://ksrexbe1.rexel-be.local/addin/assets/ico-80.png"/>
+        <bt:Image id="Icon.16x16" DefaultValue="https://ksrexbe1.rexel-be.local/dispute-production/assets/icon-16.png"/>
+        <bt:Image id="Icon.32x32" DefaultValue="https://ksrexbe1.rexel-be.local/dispute-production/assets/icon-32.png"/>
+        <bt:Image id="Icon.80x80" DefaultValue="https://ksrexbe1.rexel-be.local/dispute-production/assets/icon-80.png"/>
       </bt:Images>
 
       <bt:Urls>
         <!-- ✅ intranet urls -->
-        <bt:Url id="Commands.Url" DefaultValue="https://ksrexbe1.rexel-be.local/addin/index.html"/>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://ksrexbe1.rexel-be.local/addin/index.html"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://ksrexbe1.rexel-be.local/dispute-production/index.html"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://ksrexbe1.rexel-be.local/dispute-production/index.html"/>
       </bt:Urls>
 
       <bt:ShortStrings>
